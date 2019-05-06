@@ -77,7 +77,7 @@ bikes_orderlines_wrangled_tbl <- bikes_orderlines_joined_tbl %>%
   mutate(total.price = price * quantity) %>%
   
   # Reorganize
-  select(-...1, -location) %>%
+  select(-1, -location) %>%
   select(-ends_with(".id")) %>%
   
   bind_cols(bikes_orderlines_joined_tbl %>% select(order.id)) %>%
@@ -132,7 +132,7 @@ sales_by_year_tbl %>%
     geom_smooth(method = "lm", se = FALSE) +
     
     # Formatting
-    # theme_tq() +
+    theme_tq() +
     scale_y_continuous(labels = scales::dollar) +
     labs(
         title = "Revenue by Year",
@@ -178,8 +178,8 @@ p = sales_by_year_cat_2_tbl %>%
     facet_wrap(~ category_2, ncol = 3, scales = "free_y") +
     
     # Formatting
-    # theme_tq() +
-    # scale_fill_tq() +
+    theme_tq() +
+    scale_fill_tq() +
     scale_y_continuous(labels = scales::dollar) +
     labs(
         title = "Revenue by Year and Category 2",
