@@ -1,6 +1,6 @@
 # DS4B 101-R: R FOR BUSINESS ANALYSIS ----
 # JUMPSTART: First Sales Analysis ----
-rm(list=ls())
+
 # 1.0 Load libraries ----
 
 # Work horse packages
@@ -19,11 +19,13 @@ library(writexl)
 
 # 2.0 Importing Files ----
 
-bikes_tbl <- read_excel("bikes.xlsx")
+?read_excel()
 
-bikeshops_tbl <- read_excel("bikeshops.xlsx")
+bikes_tbl <- read_excel(path = "00_data/bike_sales/data_raw/bikes.xlsx")
 
-orderlines_tbl <- read_excel("orderlines.xlsx")
+bikeshops_tbl <- read_excel("00_data/bike_sales/data_raw/bikeshops.xlsx")
+
+orderlines_tbl <- read_excel("00_data/bike_sales/data_raw/orderlines.xlsx")
 
 
 
@@ -31,67 +33,33 @@ orderlines_tbl <- read_excel("orderlines.xlsx")
 
 bikes_tbl
 
-#pipe
+glimpse(bikes_tbl)
 
-orderlines_tbl %>% glimpse()
+bikeshops_tbl
 
-#glimpse(orderlines_tbl)
-
+orderlines_tbl
 
 # 4.0 Joining Data ----
 
+?left_join
+
+orderlines_tbl
+
+bikes_tbl
+
 left_join(orderlines_tbl, bikes_tbl, by = c("product.id" = "bike.id"))
 
-#pipe
-
-orderlines_bikes_tbl <- orderlines_tbl %>% left_join(bikes_tbl, by = c("product.id"= "bike.id")) %>% left_join(bikeshops_tbl, by = c("customer.id" = "bikeshop.id"))
-
-orderlines_tbl %>% left_join(bikes_tbl, by = c("product.id" = "bike.id")) %>% 
-                   left_join(bikeshops_tbl, by = c("customer.id" = "bikeshop.id"))
-
-bikes_orderlines_joined_tbl <- orderlines_tbl %>%
+bike_orderlines_joined_tbl <- orderlines_tbl %>%
     left_join(bikes_tbl, by = c("product.id" = "bike.id")) %>%
     left_join(bikeshops_tbl, by = c("customer.id" = "bikeshop.id"))
 
-bikes_orderlines_joined_tbl
+bike_orderlines_joined_tbl
 
-bikes_orderlines_joined_tbl %>% glimpse()
+bike_orderlines_joined_tbl %>% glimpse()
 
 # 5.0 Wrangling Data ----
 
-bikes_orderlines_wrangled_tbl <- bikes_orderlines_joined_tbl %>%
-  
-  # Separate description into category.1, category.2, and frame.material
-  separate(description,
-           into = c("category.1", "category.2", "frame.material"),
-           sep = " - ",
-           remove = TRUE) %>%
-  
-  # Separate location into city and state
-  separate(location,
-           into = c("city", "state"),
-           sep  = ", ",
-           remove = FALSE) %>%
-  
-  # price extended
-  mutate(total.price = price * quantity) %>%
-  
-  # Reorganize
-  select(-...1, -location) %>%
-  select(-ends_with(".id")) %>%
-  
-  bind_cols(bikes_orderlines_joined_tbl %>% select(order.id)) %>%
-  
-  # Reorder columns
-  select(contains("date"), contains("id"), contains("order"),
-         quantity, price, total.price,
-         everything()) %>%
-  
-  # Renaming columns
-  rename(order_date = order.date) %>%
-  set_names(names(.) %>% str_replace_all("\\.", "_")) 
 
-bikes_orderlines_wrangled_tbl %>% glimpse()
 
 
 # 6.0 Business Insights ----
