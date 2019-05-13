@@ -2,6 +2,7 @@
 # JUMPSTART: First Sales Analysis ----
 
 # 1.0 Load libraries ----
+rm(list=ls())
 
 # Work horse packages
 library(tidyverse)
@@ -19,7 +20,9 @@ library(writexl)
 
 # 2.0 Importing Files ----
 
-bikes_tbl <- read_excel("bikes.xlsx")
+?read_excel()
+
+bikes_tbl <- read_excel(path = "bikes.xlsx")
 
 bikeshops_tbl <- read_excel("bikeshops.xlsx")
 
@@ -31,67 +34,66 @@ orderlines_tbl <- read_excel("orderlines.xlsx")
 
 bikes_tbl
 
-#pipe
+glimpse(bikes_tbl)
 
-orderlines_tbl %>% glimpse()
+bikeshops_tbl
 
-#glimpse(orderlines_tbl)
-
+orderlines_tbl
 
 # 4.0 Joining Data ----
 
+?left_join
+
+orderlines_tbl
+
+bikes_tbl
+
 left_join(orderlines_tbl, bikes_tbl, by = c("product.id" = "bike.id"))
 
-#pipe
+bike_orderlines_joined_tbl <- orderlines_tbl %>%
+    left_join(bikes_tbl, by = c("product.id" = "bike.id")) %>%
+    left_join(bikeshops_tbl, by = c("customer.id" = "bikeshop.id"))
 
-orderlines_bikes_tbl <- orderlines_tbl %>% left_join(bikes_tbl, by = c("product.id"= "bike.id")) %>% left_join(bikeshops_tbl, by = c("customer.id" = "bikeshop.id"))
+bike_orderlines_joined_tbl
 
-orderlines_tbl %>% left_join(bikes_tbl, by = c("product.id" = "bike.id")) %>% 
-  left_join(bikeshops_tbl, by = c("customer.id" = "bikeshop.id"))
-
-bikes_orderlines_joined_tbl <- orderlines_tbl %>%
-  left_join(bikes_tbl, by = c("product.id" = "bike.id")) %>%
-  left_join(bikeshops_tbl, by = c("customer.id" = "bikeshop.id"))
-
-bikes_orderlines_joined_tbl
-
-bikes_orderlines_joined_tbl %>% glimpse()
+bike_orderlines_joined_tbl %>% glimpse()
 
 # 5.0 Wrangling Data ----
 
-bikes_orderlines_wrangled_tbl <- bikes_orderlines_joined_tbl %>%
-  
-  # Separate description into category.1, category.2, and frame.material
-  separate(description,
-           into = c("category.1", "category.2", "frame.material"),
-           sep = " - ",
-           remove = TRUE) %>%
-  
-  # Separate location into city and state
-  separate(location,
-           into = c("city", "state"),
-           sep  = ", ",
-           remove = FALSE) %>%
-  
-  # price extended
-  mutate(total.price = price * quantity) %>%
-  
-  # Reorganize
-  select(-1, -location) %>%
-  select(-ends_with(".id")) %>%
-  
-  bind_cols(bikes_orderlines_joined_tbl %>% select(order.id)) %>%
-  
-  # Reorder columns
-  select(contains("date"), contains("id"), contains("order"),
-         quantity, price, total.price,
-         everything()) %>%
-  
-  # Renaming columns
-  rename(order_date = order.date) %>%
-  set_names(names(.) %>% str_replace_all("\\.", "_")) 
+bike_orderlines_wrangled_tbl <- bike_orderlines_joined_tbl %>%
+    
+    # Separate description into category.1, category.2, and frame.material
+    separate(description,
+             into = c("category.1", "category.2", "frame.material"),
+             sep = " - ",
+             remove = TRUE) %>%
+    
+    
+    # Separate location into city and state
+    separate(location,
+             into = c("city", "state"),
+             sep  = ", ",
+             remove = FALSE) %>%
+    
+    # price extended
+    mutate(total.price = price * quantity) %>%
+    
+    # Reorganize
+    select(-X__1, -location) %>%
+    select(-ends_with(".id")) %>%
+    
+    bind_cols(bike_orderlines_joined_tbl %>% select(order.id)) %>%
+    
+    # Reorder columns
+    select(contains("date"), contains("id"), contains("order"),
+           quantity, price, total.price,
+           everything()) %>%
+    
+    # Renaming columns
+    rename(order_date = order.date) %>%
+    set_names(names(.) %>% str_replace_all("\\.", "_")) 
 
-bikes_orderlines_wrangled_tbl %>% glimpse()
+bike_orderlines_wrangled_tbl %>% glimpse()
 
 
 
@@ -102,7 +104,7 @@ bikes_orderlines_wrangled_tbl %>% glimpse()
 
 # Step 1 - Manipulate
 
-sales_by_year_tbl <- bikes_orderlines_wrangled_tbl %>%
+sales_by_year_tbl <- bike_orderlines_wrangled_tbl %>%
     
     # Selecting columns to focus on and adding a year column
     select(order_date, total_price) %>%
@@ -146,7 +148,7 @@ sales_by_year_tbl %>%
 
 # Step 1 - Manipulate
 
-sales_by_year_cat_2_tbl <- bikes_orderlines_wrangled_tbl %>%
+sales_by_year_cat_2_tbl <- bike_orderlines_wrangled_tbl %>%
     
     # Selecting columns and add a year
     select(order_date, total_price, category_2) %>%
@@ -165,7 +167,7 @@ sales_by_year_cat_2_tbl
 
 # Step 2 - Visualize
 
-p = sales_by_year_cat_2_tbl %>%
+p<-sales_by_year_cat_2_tbl %>%
     
     # Set up x, y, fill 
     ggplot(aes(x = year, y = sales, fill = category_2)) +
@@ -175,7 +177,7 @@ p = sales_by_year_cat_2_tbl %>%
     geom_smooth(method = "lm", se = FALSE) +
     
     # Facet
-    facet_wrap(~ category_2, ncol = 3, scales = "free_y") +
+    facet_wrap(~ category_2, ncol = 4, scales = "free_y") +
     
     # Formatting
     theme_tq() +
@@ -188,8 +190,9 @@ p = sales_by_year_cat_2_tbl %>%
         y = "Revenue",
         fill = "Product Secondary Category"
     )
-p
-#
+
+# export graph
+
 pdf("ggplot.pdf")
 print(p)
 dev.off()
@@ -197,28 +200,28 @@ dev.off()
 #
 ggsave("myplot.pdf")
 ggsave("myplot.png")
-ggsave("myplot.png",plot = p)
-
+ggsave("myplot1.png", plot = p)
 
 # 7.0 Writing Files ----
+
 
 fs::dir_create("data_wrangled_student")
 
 # 7.1 Excel ----
 
-bikes_orderlines_wrangled_tbl %>%
+bike_orderlines_wrangled_tbl %>%
     write_xlsx("data_wrangled_student/bike_orderlines.xlsx")
 
 
 # 7.2 CSV ----
 
-bikes_orderlines_wrangled_tbl %>%
+bike_orderlines_wrangled_tbl %>%
     write_csv("data_wrangled_student/bike_orderlines.csv")
 
 
 # 7.3 RDS ----
 
-bikes_orderlines_wrangled_tbl %>%
+bike_orderlines_wrangled_tbl %>%
     write_rds("data_wrangled_student/bike_orderlines.rds")
 
 
