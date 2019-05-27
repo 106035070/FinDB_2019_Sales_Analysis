@@ -233,4 +233,3 @@ bike_orderlines_tbl %>%
     mutate(order_date = ymd(order_date)) %>%
     
     filter(year(order_date) %in% c(2012, 2013))
-
